@@ -40,8 +40,16 @@ func (s *SessionServiceImpl) runSession(ctx context.Context, session *models.Ses
 	defer ticker.Stop()
 
 	mapper, _ := helpers.BuildEventMapplan(session.Plan, session.Timeline)
-	for k, v := range mapper.OffsetMap {
-		slog.Info("Event Timeline", "offset", k, "commands", len(v))
+	// for k, v := range mapper.OffsetMap {
+	// 	slog.Info("Event Timeline", "offset", k, "commands", len(v))
+	// }
+
+	for _, grp := range mapper.Groups {
+		slog.Info("Group", "Duration", grp.Duration, "Offset", grp.Offset, "Type", grp.Type)
+	}
+
+	for x, i := range mapper.Intervals {
+		slog.Info("Interval", "Idx", x, "Duration", i.Duration, "Offset", i.Offset, "Type", i.Type)
 	}
 	totalDuration := session.Plan.Duration
 	elapsed := 0

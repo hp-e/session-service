@@ -27,77 +27,79 @@ func BuildEventMapplan(plan *models.SessionPlan, timeline *models.Timeline) (*mo
 	intIndex := 0
 	if plan != nil && plan.Groups != nil {
 		for grpIdx, group := range plan.Groups {
-
-			for i := range group.RepeatCount {
-				slog.Info("Repeat count", "count", i)
-
-				groupStartOffset := offset
-				// groupEndOffset := groupStartOffset + calculateGroupDuration(group)
-				// offset := 0 //groupStartOffset
-				groupDuration := 0
-
-				for intIdx, interval := range group.Intervals {
-
-					// intervalStartOffset := offset
-					duration := int(interval.DurationValue)
-					groupDuration += duration
-
-					r.Intervals = append(r.Intervals, models.TimeEvent[models.SessionInterval]{
-						Data:     *interval,
-						Offset:   offset,
-						Duration: duration,
-						Command:  IntervalStartCommand,
-						Type:     "interval",
-						Index:    intIdx,
-					})
-
-					r.OffsetMap[offset] = append(r.OffsetMap[offset], models.Event{
-						SessionId:     plan.Id,
-						Command:       IntervalStartCommand,
-						EventData:     interval,
-						Type:          "interval",
-						IntervalIndex: intIndex,
-						GroupIndex:    grpIdx,
-					})
-					r.OffsetMap[offset+duration] = append(r.OffsetMap[offset+duration], models.Event{
-						SessionId:     plan.Id,
-						Command:       IntervalCompleteCommand,
-						EventData:     interval,
-						Type:          "interval",
-						IntervalIndex: intIndex,
-						GroupIndex:    grpIdx,
-					})
-					offset += duration
-					intIndex++
-				}
-
-				r.OffsetMap[groupStartOffset] = append(r.OffsetMap[groupStartOffset], models.Event{
-					SessionId:  plan.Id,
-					Command:    GroupIntervalStartCommand,
-					EventData:  group,
-					Type:       "group",
-					GroupIndex: grpIdx,
-				})
-
-				groupEndOffset := groupStartOffset + groupDuration
-				r.OffsetMap[groupEndOffset] = append(r.OffsetMap[groupEndOffset], models.Event{
-					SessionId:  plan.Id,
-					Command:    GroupIntervalCompleteCommand,
-					EventData:  group,
-					Type:       "group",
-					GroupIndex: grpIdx,
-				})
-
-				r.Groups = append(r.Groups, models.TimeEvent[models.SessionIntervalGroup]{
-					Data:     *group,
-					Offset:   groupStartOffset,
-					Duration: groupDuration,
-					Command:  GroupIntervalStartCommand,
-					Type:     "group",
-					Index:    i,
-				})
+			if group.RepeatCount == 0 {
+				group.RepeatCount = 1
 			}
+			groupStartOffset := offset
+			// for i := range group.RepeatCount {
+			// slog.Info("Repeat count", "count", i)
+
+			// groupEndOffset := groupStartOffset + calculateGroupDuration(group)
+			// offset := 0 //groupStartOffset
+			groupDuration := 0
+
+			for intIdx, interval := range group.Intervals {
+
+				// intervalStartOffset := offset
+				duration := int(interval.DurationValue)
+				groupDuration += duration
+
+				r.Intervals = append(r.Intervals, models.TimeEvent[models.SessionInterval]{
+					Data:     *interval,
+					Offset:   offset,
+					Duration: duration,
+					Command:  IntervalStartCommand,
+					Type:     "interval",
+					Index:    intIdx,
+				})
+
+				r.OffsetMap[offset] = append(r.OffsetMap[offset], models.Event{
+					SessionId:     plan.Id,
+					Command:       IntervalStartCommand,
+					EventData:     interval,
+					Type:          "interval",
+					IntervalIndex: intIndex,
+					GroupIndex:    grpIdx,
+				})
+				r.OffsetMap[offset+duration] = append(r.OffsetMap[offset+duration], models.Event{
+					SessionId:     plan.Id,
+					Command:       IntervalCompleteCommand,
+					EventData:     interval,
+					Type:          "interval",
+					IntervalIndex: intIndex,
+					GroupIndex:    grpIdx,
+				})
+				offset += duration
+				intIndex++
+			}
+
+			r.OffsetMap[groupStartOffset] = append(r.OffsetMap[groupStartOffset], models.Event{
+				SessionId:  plan.Id,
+				Command:    GroupIntervalStartCommand,
+				EventData:  group,
+				Type:       "group",
+				GroupIndex: grpIdx,
+			})
+
+			groupEndOffset := groupStartOffset + groupDuration
+			r.OffsetMap[groupEndOffset] = append(r.OffsetMap[groupEndOffset], models.Event{
+				SessionId:  plan.Id,
+				Command:    GroupIntervalCompleteCommand,
+				EventData:  group,
+				Type:       "group",
+				GroupIndex: grpIdx,
+			})
+
+			r.Groups = append(r.Groups, models.TimeEvent[models.SessionIntervalGroup]{
+				Data:     *group,
+				Offset:   groupStartOffset,
+				Duration: groupDuration,
+				Command:  GroupIntervalStartCommand,
+				Type:     "group",
+				Index:    grpIdx,
+			})
 		}
+		// }
 	}
 
 	if timeline == nil {
